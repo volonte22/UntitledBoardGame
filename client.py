@@ -1,5 +1,6 @@
 import pygame
- 
+from network import Network
+
 width = 1280
 height = 720
 win = pygame.display.set_mode((width, height))
@@ -10,6 +11,9 @@ clientNumber = 0
 #images
 playerOneCardBackImage = pygame.image.load('resources/backgroundOfCard.jpg')
 background = pygame.image.load('resources/one.jpg')
+
+#initalizing network
+
 
 class Player():
     def __init__(self, x, y, width, height, color):
@@ -39,7 +43,17 @@ class Player():
         if keys[pygame.K_DOWN]:
             self.y += self.vel
 
+        self.update()
+
+    def update(self):
         self.rect = (self.x, self.y, self.width, self.height) #coordinates is top left, so down is adding (top left is 0,0)
+
+def read_pos(str):
+    str = str.split(",")
+    return int(str[0]), int(str[1])
+
+def make_pos(tup):
+    return str(tup[0]) + "," + str(tup[1])
             
 
 class Card():
@@ -63,7 +77,7 @@ class Card():
     def select(self):
         mousePos = pygame.mouse.get_pos()
 
-class Deck():
+class boardLook():
     def __init__(self, x, y, width, height, cards):
         self.x = x
         self.y = y
@@ -81,22 +95,33 @@ class Deck():
         pygame.draw.rect(win, (0,0,0), (320, 570, 640, (720-570)),4)
         
 
-def redrawWindow(win,Player,Card,Deck):
+def redrawWindow(win,Player,Card,boardLook,Player2):
     win.blit(background,(0,0))
     Player.draw(win)
+    Player2.draw(win)
     Card.draw(win)
-    Deck.draw(win)
+    boardLook.draw(win)
     pygame.display.update()
 
 
 def main():
-    p = Player(50, 50, 100, 100, (0, 255, 0))
+    n = Network()
+    startPos = read_pos(n.getPos())
+    p = Player(startPos[0], startPos[1], 100, 100, (0, 255, 0))
+    p2 = Player(0, 0, 100, 100, (0,255, 0))
+
     c = Card(100, 100, 50, 100, 1, 1, 1, (0,255,0))
-    d = Deck(500, 600, 200, 400, 1)
+    d = boardLook(500, 600, 200, 400, 1)
+
     clock = pygame.time.Clock()
     run = True
     while run:
         clock.tick(60)
+        p2Pos = read_pos(n.send(make_pos((p.x, p.y))))
+        p2.x = p2Pos[0]
+        p2.y = p2Pos[1]
+        p2.update()
+
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 run = False
@@ -104,7 +129,7 @@ def main():
 
         p.move()
        # win.blit(background, (0,0))
-        redrawWindow(win,p,c,d)
+        redrawWindow(win,p,c,d,p2)
 
 
 main()
